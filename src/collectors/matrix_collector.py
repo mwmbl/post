@@ -4,7 +4,7 @@ import asyncio
 from datetime import datetime
 from typing import List, Optional
 
-from nio import AsyncClient, MatrixRoom, RoomMessageText
+from nio import AsyncClient, LoginResponse, MatrixRoom, RoomMessageText
 
 from config.settings import settings
 from src.storage import Activity, ActivityType
@@ -18,8 +18,36 @@ class MatrixCollector(BaseCollector):
     def __init__(self) -> None:
         """Initialize the Matrix collector."""
         super().__init__(ActivityType.MATRIX_POST)
-        self.client = AsyncClient(settings.matrix_homeserver, settings.matrix_user_id)
-        self.client.access_token = settings.matrix_access_token
+        # Construct user ID from username and homeserver
+        homeserver_domain = settings.matrix_homeserver.split("://")[-1]
+        self.user_id = f"@{settings.matrix_username}:{homeserver_domain}"
+        self.client = AsyncClient(settings.matrix_homeserver, self.user_id)
+        self._logged_in = False
+
+    async def _ensure_logged_in(self) -> bool:
+        """Ensure the client is logged in to Matrix.
+        
+        Returns:
+            True if login successful, False otherwise
+        """
+        if self._logged_in:
+            return True
+            
+        try:
+            self.logger.info("Logging in to Matrix...")
+            response = await self.client.login(settings.matrix_password)
+            
+            if isinstance(response, LoginResponse):
+                self.logger.info(f"Successfully logged in as {response.user_id}")
+                self._logged_in = True
+                return True
+            else:
+                self.logger.error(f"Matrix login failed: {response}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error logging in to Matrix: {e}")
+            return False
 
     async def collect(self, since: Optional[datetime] = None) -> List[Activity]:
         """Collect Matrix room activities.
@@ -33,6 +61,11 @@ class MatrixCollector(BaseCollector):
         activities = []
         
         try:
+            # Ensure we're logged in
+            if not await self._ensure_logged_in():
+                self.logger.error("Failed to log in to Matrix")
+                return activities
+            
             # Join the room if not already joined
             await self.client.join(settings.matrix_room_id)
             
@@ -71,7 +104,7 @@ class MatrixCollector(BaseCollector):
                             created_at=event_time,
                             url=f"https://matrix.to/#/{settings.matrix_room_id}/{event.event_id}",
                             author=event.sender,
-                            metadata={
+                            extra_data={
                                 "room_id": settings.matrix_room_id,
                                 "event_id": event.event_id,
                                 "event_type": event.type,
@@ -100,7 +133,7 @@ class MatrixCollector(BaseCollector):
         content_lower = content.lower()
         
         # Messages from the configured user are always newsworthy
-        if sender == settings.matrix_user_id:
+        if sender == self.user_id:
             return True
         
         # Messages about new members, releases, or important updates

@@ -69,7 +69,7 @@ class MwmblStatsCollector(BaseCollector):
                     content=f"Current dataset contains {total_pages:,} pages from {total_domains:,} domains",
                     created_at=datetime.now(),
                     url=settings.mwmbl_stats_url,
-                    metadata={
+                    extra_data={
                         "type": "dataset",
                         "total_pages": total_pages,
                         "total_domains": total_domains,
@@ -119,7 +119,7 @@ class MwmblStatsCollector(BaseCollector):
                     content=content,
                     created_at=datetime.now(),
                     url=settings.mwmbl_stats_url,
-                    metadata={
+                    extra_data={
                         "type": "crawler",
                         "pages_crawled_today": pages_crawled,
                         "active_crawlers": active_crawlers,
@@ -151,7 +151,7 @@ class MwmblStatsCollector(BaseCollector):
                         content=f"Updated statistics for {key}",
                         created_at=datetime.now(),
                         url=settings.mwmbl_stats_url,
-                        metadata={
+                        extra_data={
                             "type": "general",
                             "category": key,
                             **value,

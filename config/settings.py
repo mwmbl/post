@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     matrix_homeserver: str = Field(
         default="https://matrix.org", description="Matrix homeserver URL"
     )
-    matrix_user_id: str = Field(description="Matrix user ID (e.g., @user:matrix.org)")
-    matrix_access_token: str = Field(description="Matrix access token")
+    matrix_username: str = Field(description="Matrix username (without @ symbol)")
+    matrix_password: str = Field(description="Matrix password")
     matrix_room_id: str = Field(
         default="!mwmbl:matrix.org", description="Matrix room ID to monitor"
     )

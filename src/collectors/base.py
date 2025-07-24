@@ -43,7 +43,7 @@ class BaseCollector(ABC):
         created_at: datetime,
         url: Optional[str] = None,
         author: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        extra_data: Optional[Dict[str, Any]] = None,
         is_newsworthy: bool = False,
     ) -> Activity:
         """Create an Activity object.
@@ -51,11 +51,11 @@ class BaseCollector(ABC):
         Args:
             source_id: Unique identifier from the source system
             title: Activity title
-            content: Activity content/description
+            content: Activity content
             created_at: When the activity was created
             url: Optional URL to the activity
             author: Optional author of the activity
-            metadata: Optional metadata dictionary
+            extra_data: Optional extra data dictionary
             is_newsworthy: Whether this activity is considered newsworthy
             
         Returns:
@@ -66,11 +66,11 @@ class BaseCollector(ABC):
             source_id=source_id,
             title=title,
             content=content,
+            created_at=created_at,
             url=url,
             author=author,
-            created_at=created_at,
             is_newsworthy=is_newsworthy,
-            metadata=json.dumps(metadata) if metadata else None,
+            extra_data=json.dumps(extra_data) if extra_data else None,
         )
 
     def _save_activities(self, activities: List[Activity]) -> int:

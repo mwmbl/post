@@ -59,7 +59,7 @@ class Activity(Base):
         DateTime(timezone=True), server_default=func.now()
     )
     is_newsworthy: Mapped[bool] = mapped_column(Boolean, default=False)
-    metadata: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON string
+    extra_data: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON string
 
     __table_args__ = (
         UniqueConstraint("activity_type", "source_id", name="unique_activity"),

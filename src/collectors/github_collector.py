@@ -76,7 +76,7 @@ class GitHubCollector(BaseCollector):
                     created_at=pr.created_at,
                     url=pr.html_url,
                     author=pr.user.login if pr.user else None,
-                    metadata={
+                    extra_data={
                         "repo": repo.name,
                         "state": pr.state,
                         "merged": pr.merged,
@@ -120,7 +120,7 @@ class GitHubCollector(BaseCollector):
                     created_at=issue.created_at,
                     url=issue.html_url,
                     author=issue.user.login if issue.user else None,
-                    metadata={
+                    extra_data={
                         "repo": repo.name,
                         "state": issue.state,
                         "labels": labels,
@@ -153,7 +153,7 @@ class GitHubCollector(BaseCollector):
                     created_at=release.created_at,
                     url=release.html_url,
                     author=release.author.login if release.author else None,
-                    metadata={
+                    extra_data={
                         "repo": repo.name,
                         "tag_name": release.tag_name,
                         "prerelease": release.prerelease,
@@ -197,7 +197,7 @@ class GitHubCollector(BaseCollector):
                     created_at=commit.commit.author.date,
                     url=commit.html_url,
                     author=commit.author.login if commit.author else commit.commit.author.name,
-                    metadata={
+                    extra_data={
                         "repo": repo.name,
                         "sha": commit.sha,
                         "files_changed": files_changed,
