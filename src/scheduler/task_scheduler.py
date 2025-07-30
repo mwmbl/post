@@ -263,10 +263,24 @@ class TaskScheduler:
                 self.logger.error(f"Error testing {platform.value} publisher: {e}")
                 results[f"{platform.value}_publisher"] = False
         
+        # Test collectors
+        for collector in self.collectors:
+            collector_name = collector.__class__.__name__.lower().replace('collector', '')
+            try:
+                # Test by trying to collect recent activities (last hour)
+                since = datetime.now() - timedelta(hours=1)
+                activities = await collector.collect(since)
+                results[f"{collector_name}_collector"] = True
+                self.logger.info(f"{collector_name} collector test passed: {len(activities)} activities")
+            except Exception as e:
+                self.logger.error(f"Error testing {collector_name} collector: {e}")
+                results[f"{collector_name}_collector"] = False
+        
         # Test database connection
         try:
+            from sqlalchemy import text
             with get_db_session() as session:
-                session.execute("SELECT 1")
+                session.execute(text("SELECT 1"))
             results["database"] = True
         except Exception as e:
             self.logger.error(f"Database connection test failed: {e}")

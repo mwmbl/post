@@ -1,6 +1,6 @@
 """GitHub activity collector."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from github import Github
@@ -52,6 +52,26 @@ class GitHubCollector(BaseCollector):
         
         return activities
 
+    def _compare_datetime(self, dt1: datetime, dt2: datetime) -> bool:
+        """Compare two datetimes, handling timezone awareness.
+        
+        Args:
+            dt1: First datetime (from GitHub API)
+            dt2: Second datetime (from our system)
+            
+        Returns:
+            True if dt1 < dt2
+        """
+        # If dt2 is naive, make it timezone-aware (assume UTC)
+        if dt2.tzinfo is None:
+            dt2 = dt2.replace(tzinfo=timezone.utc)
+        
+        # If dt1 is naive, make it timezone-aware (assume UTC)
+        if dt1.tzinfo is None:
+            dt1 = dt1.replace(tzinfo=timezone.utc)
+        
+        return dt1 < dt2
+
     async def _collect_pull_requests(self, repo, since: Optional[datetime] = None) -> List[Activity]:
         """Collect pull requests from a repository."""
         activities = []
@@ -60,7 +80,7 @@ class GitHubCollector(BaseCollector):
             prs = repo.get_pulls(state="all", sort="updated", direction="desc")
             
             for pr in prs:
-                if since and pr.created_at < since:
+                if since and self._compare_datetime(pr.created_at, since):
                     break
                     
                 # Determine if this PR is newsworthy
@@ -103,7 +123,7 @@ class GitHubCollector(BaseCollector):
                 if issue.pull_request:  # Skip PRs (they appear as issues too)
                     continue
                     
-                if since and issue.created_at < since:
+                if since and self._compare_datetime(issue.created_at, since):
                     break
                 
                 # Issues are newsworthy if they're labeled as important or are closed
@@ -142,7 +162,7 @@ class GitHubCollector(BaseCollector):
             releases = repo.get_releases()
             
             for release in releases:
-                if since and release.created_at < since:
+                if since and self._compare_datetime(release.created_at, since):
                     break
                 
                 # All releases are newsworthy
@@ -183,11 +203,14 @@ class GitHubCollector(BaseCollector):
                 if commit_count >= 10:  # Limit to 10 most recent commits
                     break
                     
-                if since and commit.commit.author.date < since:
+                if since and self._compare_datetime(commit.commit.author.date, since):
                     break
                 
                 # Commits are newsworthy if they're significant (multiple files changed)
-                files_changed = len(commit.files) if commit.files else 0
+                try:
+                    files_changed = len(list(commit.files)) if commit.files else 0
+                except (TypeError, AttributeError):
+                    files_changed = 0
                 is_newsworthy = files_changed > 3
                 
                 activity = self._create_activity(

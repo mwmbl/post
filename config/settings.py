@@ -36,7 +36,7 @@ class Settings(BaseSettings):
 
     # Mwmbl Stats API
     mwmbl_stats_url: str = Field(
-        default="https://api.mwmbl.org/stats", description="Mwmbl stats API URL"
+        default="https://api.mwmbl.org/api/v1/crawler/stats", description="Mwmbl stats API URL"
     )
 
     # Mastodon
